@@ -5,8 +5,9 @@ from datetime import datetime
 
 #neosintez_id = '993f811a-c563-ec11-911b-005056b6948b'
 url = 'http://construction.irkutskoil.ru/'
-path = 'path.txt' # путь к директории, в которой должен быть файл roots.txt и в которую будут сохраняться выгрузки
-roots_file = 'roots.txt'
+admin_node_id = '6709b168-41af-ec11-9124-005056b6948b'
+mt_list_atr = 'f8683b26-41af-ec11-9124-005056b6948b'
+path_atr = '62c3c4a0-41af-ec11-9124-005056b6948b'
 
 def authentification(url, aut_string):  # функция возвращает токен для атуентификации. Учетные данные берет из файла
     req_url = url + 'connect/token'
@@ -20,6 +21,22 @@ def authentification(url, aut_string):  # функция возвращает т
     else:
         token = ''
     return token
+
+
+def get_configuration(*, url, token, node_id, list_atr, path_atr):
+    req_url = url + f'api/objects/{node_id}'
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+    response = requests.get(req_url, headers=headers)
+    response = json.loads(response.text)
+    mt_list = response['Attributes'][list_atr]['Value']
+    mt_list = [tuple(r.split(';')) for r in mt_list.split('\n')]  # создание списка кортежей названия узлов и их id
+    path = response['Attributes'][path_atr]['Value']
+    return mt_list, path
+
+
 
 def export_classes(url, token, neosintez_id):
     req_url = url + f'api/objects/export/classes'  # id сущности, в которой меняем атрибут
@@ -117,19 +134,13 @@ def get_excel(neosintez_id, name):
     return message
 
 
-#  путь к директории для сохранения файлов
-with open(path, encoding='utf-8') as p:
-    path = p.read()
-
 # токен для авторизации
 with open('auth_data.txt') as f:
     aut_string = f.read()
 token = authentification(url=url, aut_string=aut_string)
 
 #  чтение файла roots для определения объектов для экспорта
-roots_file_path = path + roots_file
-with open(roots_file_path, encoding='utf-8') as f:
-    roots_list = [tuple(r.split(';')) for r in f.read().split('\n')] #  создание списка кортежей названия узлов и их id
+roots_list, path = get_configuration(url=url, token=token, node_id=admin_node_id, list_atr=mt_list_atr, path_atr=path_atr)
 
 
 for root in roots_list:
