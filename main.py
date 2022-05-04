@@ -1,3 +1,5 @@
+import os
+
 import requests
 import json
 import time
@@ -8,6 +10,7 @@ url = 'http://construction.irkutskoil.ru/'
 admin_node_id = '6709b168-41af-ec11-9124-005056b6948b'
 mt_list_atr = 'f8683b26-41af-ec11-9124-005056b6948b'
 path_atr = '62c3c4a0-41af-ec11-9124-005056b6948b'
+except_path = 'files/'
 
 def authentification(url, aut_string):  # функция возвращает токен для атуентификации. Учетные данные берет из файла
     req_url = url + 'connect/token'
@@ -127,8 +130,13 @@ def get_excel(neosintez_id, name):
         message = f'Успешный эскпорт {name} из узла {neosintez_id}'
     else:
         message = f'Ошибка экспорта {name} из узла {neosintez_id}'
+
+    # запись файла по пути из атрибута или в локальную папку если нет доступа
     file_name = f'{name}_{datetime.now().strftime("%Y-%m-%d_%H.%M.%S")}.xlsx'
-    file_path = path + file_name
+    if os.access(path, os.F_OK):
+        file_path = path + file_name
+    else:
+        file_path = except_path + file_name
     with open(file_path, 'wb') as f:
         f.write(excel.content)
     return message
